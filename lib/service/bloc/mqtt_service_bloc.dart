@@ -7,17 +7,26 @@ import 'package:typed_data/typed_buffers.dart';
 part 'mqtt_service_event.dart';
 part 'mqtt_service_state.dart';
 
+const String clientIdentifier = 'server';
+
 class MqttServiceBloc extends Bloc<MqttServiceEvent, MqttServiceState> {
   MqttServiceBloc()
       : super(
           MqttServiceInitial(
-            MqttServerClient('broker.emqx.io', 'android'),
+            MqttServerClient('broker.emqx.io', clientIdentifier),
           ),
         ) {
     on<MqttInit>((event, emit) async {
-      MqttServerClient client = MqttServerClient('broker.emqx.io', 'android');
+      MqttServerClient client =
+          MqttServerClient('broker.emqx.io', event.userIdentifier);
       client.onConnected = () => add(OnConnected());
       client.onDisconnected = () => add(OnDisconnected());
+
+      client.autoReconnect = true;
+      final connMessage = MqttConnectMessage()
+          .startClean() // Non persistent session for testing
+          .withWillQos(MqttQos.exactlyOnce);
+      state.client.connectionMessage = connMessage;
 
       emit(MqttServiceFilled(client));
 
@@ -29,15 +38,23 @@ class MqttServiceBloc extends Bloc<MqttServiceEvent, MqttServiceState> {
       }
 
       state.client.published!.listen((a) {
-        print('isi publish > ${a.payload}');
+        print('isi publish > ${a.variableHeader!.messageIdentifier}');
       });
       state.client.updates!.listen((a) {
         final MqttPublishMessage recMessage =
             a.first.payload as MqttPublishMessage;
         final String pt = MqttPublishPayload.bytesToStringAsString(
             recMessage.payload.message);
-        if (pt == 'server') {
-          add(Send('saddam'));
+        print('ini message identifier' + recMessage.payload.message.toString());
+        if (state.client.clientIdentifier != 'client') {
+          if (pt == 'server') {
+            add(Send('saddam'));
+          }
+        }
+        if (state.client.clientIdentifier != 'server') {
+          if (pt == 'server') {
+            add(Send('saddam'));
+          }
         }
         print('isi update > $pt');
       });

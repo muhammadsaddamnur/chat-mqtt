@@ -16,12 +16,26 @@ class _ChatState extends State<Chat> {
   final TextEditingController _controller = TextEditingController();
 
   @override
+  void initState() {
+    Future.microtask(() {
+      final mqttBloc = BlocProvider.of<MqttServiceBloc>(context);
+      mqttBloc.add(MqttInit(clientIdentifier));
+    });
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final dataBloc = BlocProvider.of<ChatBloc>(context);
     final mqttBloc = BlocProvider.of<MqttServiceBloc>(context);
 
     return Scaffold(
       appBar: AppBar(
+        title: BlocBuilder<MqttServiceBloc, MqttServiceState>(
+          builder: (context, state) {
+            return Text(state.client.clientIdentifier);
+          },
+        ),
         actions: [
           IconButton(
             onPressed: () {
@@ -32,7 +46,7 @@ class _ChatState extends State<Chat> {
           ),
           IconButton(
             onPressed: () {
-              mqttBloc.add(MqttInit());
+              mqttBloc.add(MqttInit('saddam'));
             },
             icon: const Icon(Icons.connect_without_contact),
           ),

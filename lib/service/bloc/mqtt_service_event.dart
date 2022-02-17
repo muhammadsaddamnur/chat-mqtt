@@ -3,7 +3,11 @@ part of 'mqtt_service_bloc.dart';
 @immutable
 abstract class MqttServiceEvent {}
 
-class MqttInit extends MqttServiceEvent {}
+class MqttInit extends MqttServiceEvent {
+  final String userIdentifier;
+
+  MqttInit(this.userIdentifier);
+}
 
 class Disconnect extends MqttServiceEvent {}
 
